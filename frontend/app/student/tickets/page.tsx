@@ -318,7 +318,7 @@ export default function MyTicketsPage() {
             <div className="mb-3 flex items-center gap-3 rounded-xl bg-slate-50 p-3">
 
               <div className="flex h-9 w-9 items-center justify-center rounded-full bg-blue-100 text-sm font-bold text-blue-700">
-                {user.name.charAt(0).toUpperCase()}
+                {user?.name?.charAt(0).toUpperCase()}
               </div>
 
               <div className="min-w-0">

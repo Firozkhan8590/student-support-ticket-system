@@ -108,3 +108,32 @@ export const register = async ({
         },
     };
 };
+export const getCurrentUser = async (userId: number) => {
+    const user = await db("users")
+        .select(
+            "id",
+            "name",
+            "email",
+            "role",
+            "student_id",
+            "phone"
+        )
+        .where({
+            id: userId,
+            is_active: true,
+        })
+        .first();
+
+    if (!user) {
+        throw new Error("User not found");
+    }
+
+    return {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        studentId: user.student_id,
+        phone: user.phone,
+    };
+};

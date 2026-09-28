@@ -50,11 +50,13 @@ export function AuthProvider({
       const token = getToken();
       const storedUser = getStoredUser();
 
+      // No token means user is not authenticated
       if (!token) {
         setLoading(false);
         return;
       }
 
+      // Show stored user immediately while /auth/me is loading
       if (storedUser) {
         setUser(storedUser);
       }
@@ -62,7 +64,14 @@ export function AuthProvider({
       try {
         const response = await api.get("/auth/me");
 
-        const currentUser = response.data.data;
+        // Backend response:
+        // {
+        //   success: true,
+        //   data: {
+        //     user: {...}
+        //   }
+        // }
+        const currentUser: User = response.data.data.user;
 
         setUser(currentUser);
 
@@ -70,7 +79,9 @@ export function AuthProvider({
           "user",
           JSON.stringify(currentUser)
         );
-      } catch {
+      } catch (error) {
+        console.error("Failed to restore authentication:", error);
+
         clearAuth();
         setUser(null);
       } finally {
@@ -89,6 +100,14 @@ export function AuthProvider({
       credentials
     );
 
+    // Backend login response:
+    // {
+    //   success: true,
+    //   data: {
+    //     token: "...",
+    //     user: {...}
+    //   }
+    // }
     const { token, user } = response.data.data;
 
     setAuth(token, user);
@@ -106,7 +125,7 @@ export function AuthProvider({
   const logout = () => {
     clearAuth();
     setUser(null);
-    router.push("/login");
+    router.push("/");
   };
 
   return (

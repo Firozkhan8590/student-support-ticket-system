@@ -262,17 +262,17 @@ export const getTicketById = async (
 
 export const getAllTickets = async (query: TicketQueryInput) => {
   const {
-  search,
-  status,
-  priority,
-  categoryId,
-  assignedTo,
-  slaStatus,
-  sortBy = "created_at",
-  sortOrder = "desc",
-  page = 1,
-  limit = 20,
-} = query;
+    search,
+    status,
+    priority,
+    categoryId,
+    assignedTo,
+    slaStatus,
+    sortBy = "created_at",
+    sortOrder = "desc",
+    page = 1,
+    limit = 20,
+  } = query;
 
   const offset = (page - 1) * limit;
 
@@ -282,18 +282,36 @@ export const getAllTickets = async (query: TicketQueryInput) => {
     .leftJoin("users as staff", "t.assigned_to", "staff.id")
     .leftJoin("ticket_sla as sla", "t.id", "sla.ticket_id");
 
-  // Search
+  /* =========================
+     SEARCH
+  ========================= */
+
   if (search) {
     baseQuery.where((builder) => {
       builder
-        .whereILike("t.ticket_number", `%${search}%`)
-        .orWhereILike("t.subject", `%${search}%`)
-        .orWhereILike("student.name", `%${search}%`)
-        .orWhereILike("student.email", `%${search}%`);
+        .whereILike(
+          "t.ticket_number",
+          `%${search}%`
+        )
+        .orWhereILike(
+          "t.subject",
+          `%${search}%`
+        )
+        .orWhereILike(
+          "student.name",
+          `%${search}%`
+        )
+        .orWhereILike(
+          "student.email",
+          `%${search}%`
+        );
     });
   }
 
-  // Filters
+  /* =========================
+     NORMAL FILTERS
+  ========================= */
+
   if (status) {
     baseQuery.where("t.status", status);
   }
@@ -303,22 +321,23 @@ export const getAllTickets = async (query: TicketQueryInput) => {
   }
 
   if (categoryId) {
-    baseQuery.where("t.category_id", categoryId);
+    baseQuery.where(
+      "t.category_id",
+      categoryId
+    );
   }
 
   if (assignedTo) {
-    baseQuery.where("t.assigned_to", assignedTo);
+    baseQuery.where(
+      "t.assigned_to",
+      assignedTo
+    );
   }
 
-  // Count before pagination
-  const countQuery = baseQuery
-    .clone()
-    .clearSelect()
-    .clearOrder()
-    .countDistinct("t.id as count")
-    .first();
+  /* =========================
+     SORTING
+  ========================= */
 
-  // Allowed sorting columns
   const sortColumnMap: Record<string, string> = {
     created_at: "t.created_at",
     updated_at: "t.updated_at",
@@ -326,7 +345,17 @@ export const getAllTickets = async (query: TicketQueryInput) => {
     status: "t.status",
   };
 
-  const sortColumn = sortColumnMap[sortBy] || "t.created_at";
+  const sortColumn =
+    sortColumnMap[sortBy] ||
+    "t.created_at";
+
+  /* =========================
+     FETCH DATA
+     
+     IMPORTANT:
+     Do NOT paginate here when
+     SLA filtering is required.
+  ========================= */
 
   const tickets = await baseQuery
     .select(
@@ -355,51 +384,93 @@ export const getAllTickets = async (query: TicketQueryInput) => {
       "sla.first_response_breached",
       "sla.resolution_breached"
     )
-    .orderBy(sortColumn, sortOrder)
-    .limit(limit)
-    .offset(offset);
+    .orderBy(sortColumn, sortOrder);
 
-  const countResult = await countQuery;
+  /* =========================
+     CALCULATE SLA
+  ========================= */
 
-  const total = Number(countResult?.count || 0);
+  const formattedTickets = tickets.map(
+    (ticket) => {
+      const calculatedSlaStatus =
+        ticket.first_response_due_at ||
+        ticket.resolution_due_at
+          ? calculateSLAStatus({
+              createdAt:
+                ticket.created_at,
 
-  const formattedTickets = tickets.map((ticket) => {
-  const calculatedSlaStatus =
-    ticket.first_response_due_at || ticket.resolution_due_at
-      ? calculateSLAStatus({
-          createdAt: ticket.created_at,
-          firstResponseDueAt: ticket.first_response_due_at,
-          firstRespondedAt: ticket.first_responded_at,
-          resolutionDueAt: ticket.resolution_due_at,
-          resolvedAt: ticket.resolved_at,
-          firstResponseBreached: ticket.first_response_breached,
-          resolutionBreached: ticket.resolution_breached,
-        })
-      : null;
+              firstResponseDueAt:
+                ticket.first_response_due_at,
+
+              firstRespondedAt:
+                ticket.first_responded_at,
+
+              resolutionDueAt:
+                ticket.resolution_due_at,
+
+              resolvedAt:
+                ticket.resolved_at,
+
+              firstResponseBreached:
+                ticket.first_response_breached,
+
+              resolutionBreached:
+                ticket.resolution_breached,
+            })
+          : null;
+
+      return {
+        ...ticket,
+        slaStatus: calculatedSlaStatus,
+      };
+    }
+  );
+
+  /* =========================
+     SLA FILTER
+  ========================= */
+
+  const filteredTickets = slaStatus
+    ? formattedTickets.filter(
+        (ticket) =>
+          ticket.slaStatus?.status ===
+          slaStatus
+      )
+    : formattedTickets;
+
+  /* =========================
+     CORRECT TOTAL
+  ========================= */
+
+  const total =
+    filteredTickets.length;
+
+  /* =========================
+     PAGINATION
+  ========================= */
+
+  const paginatedTickets =
+    filteredTickets.slice(
+      offset,
+      offset + limit
+    );
+
+  /* =========================
+     RESPONSE
+  ========================= */
 
   return {
-    ...ticket,
-    slaStatus: calculatedSlaStatus,
-  };
-});
+    tickets: paginatedTickets,
 
-const filteredTickets = slaStatus
-  ? formattedTickets.filter(
-      (ticket) => ticket.slaStatus?.status === slaStatus
-    )
-  : formattedTickets;
-
-  return {
-    tickets: filteredTickets,
     pagination: {
       page,
       limit,
       total,
-      totalPages: Math.ceil(total / limit),
+      totalPages:
+        Math.ceil(total / limit),
     },
   };
 };
-
 export const assignTicket = async (
     ticketId: number,
     assignedTo: number,

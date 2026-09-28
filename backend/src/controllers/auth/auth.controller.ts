@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import * as authService from "../../modules/auth/auth.service";
+import { AuthRequest } from "../../middleware/auth.middleware";
 
 
 export const login = async (
@@ -85,6 +86,39 @@ export const register = async (
                 error instanceof Error
                     ? error.message
                     : "Registration failed",
+        });
+    }
+};
+
+export const me = async (
+    req: AuthRequest,
+    res: Response
+) => {
+    try {
+        if (!req.user) {
+            return res.status(401).json({
+                success: false,
+                message: "Unauthorized",
+            });
+        }
+
+        const user = await authService.getCurrentUser(
+            req.user.id
+        );
+
+        return res.status(200).json({
+            success: true,
+            data: {
+                user,
+            },
+        });
+    } catch (error) {
+        return res.status(404).json({
+            success: false,
+            message:
+                error instanceof Error
+                    ? error.message
+                    : "User not found",
         });
     }
 };

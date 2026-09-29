@@ -278,6 +278,9 @@ export default function ManagerTicketDetailsPage() {
   const [pendingReason, setPendingReason] =
     useState("");
 
+  const [pendingError, setPendingError] =
+    useState("");
+
   const [resolutionSummary, setResolutionSummary] =
     useState("");
 
@@ -600,10 +603,8 @@ export default function ManagerTicketDetailsPage() {
         selectedStatus ===
         "PENDING_STUDENT"
       ) {
-        setPendingReason(
-          ticket.pending_reason || ""
-        );
-
+        setPendingReason("");
+        setPendingError("");
         setShowPendingModal(true);
         return;
       }
@@ -640,28 +641,46 @@ export default function ManagerTicketDetailsPage() {
     async () => {
       if (!ticket) return;
 
-      if (!pendingReason.trim()) {
-        setError(
+      const reason =
+        pendingReason.trim();
+
+      if (!reason) {
+        setPendingError(
           "Please provide a pending reason."
+        );
+        return;
+      }
+
+      if (reason.length > 1000) {
+        setPendingError(
+          "Pending reason cannot exceed 1000 characters."
         );
         return;
       }
 
       try {
         setUpdating(true);
+        setPendingError("");
         setError("");
 
         await updateTicketStatus(
           ticket.id,
           "PENDING_STUDENT",
-          pendingReason.trim()
+          reason
         );
 
         setShowPendingModal(false);
+        setPendingReason("");
+        setPendingError("");
 
         await fetchTicket(true);
       } catch (err: any) {
-        setError(
+        console.error(
+          "Failed to move ticket to Pending Student:",
+          err
+        );
+
+        setPendingError(
           err?.response?.data?.message ||
             "Failed to update status."
         );
@@ -1898,48 +1917,132 @@ export default function ManagerTicketDetailsPage() {
       ===================================================== */}
 
       {showPendingModal && (
-        <Modal
-          title="Move to Pending Student"
-          description="Provide the reason why the ticket requires action or information from the student."
-          onClose={() =>
-            setShowPendingModal(false)
-          }
-        >
-          <textarea
-            value={pendingReason}
-            onChange={(e) =>
-              setPendingReason(
-                e.target.value
-              )
-            }
-            rows={5}
-            placeholder="Enter pending reason..."
-            className="w-full resize-none rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-slate-900/40 p-4 backdrop-blur-sm">
+          {/* BACKDROP */}
+          <button
+            type="button"
+            aria-label="Close modal"
+            onClick={() => {
+              if (!updating) {
+                setShowPendingModal(false);
+                setPendingReason("");
+                setPendingError("");
+                setSelectedStatus(ticket.status);
+              }
+            }}
+            className="absolute inset-0"
           />
 
-          <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-            <button
-              onClick={() =>
-                setShowPendingModal(false)
-              }
-              className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50"
-            >
-              Cancel
-            </button>
+          {/* MODAL */}
+          <div className="relative w-full max-w-md overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl">
+            {/* HEADER */}
+            <div className="flex items-start justify-between border-b border-slate-200 px-5 py-4">
+              <div>
+                <h2 className="text-base font-bold text-slate-900">
+                  Move to Pending Student
+                </h2>
 
-            <button
-              onClick={
-                handlePendingStatus
-              }
-              disabled={updating}
-              className="rounded-xl bg-orange-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-orange-700 disabled:opacity-50"
-            >
-              {updating
-                ? "Updating..."
-                : "Move to Pending"}
-            </button>
+                <p className="mt-1 text-xs leading-5 text-slate-500">
+                  Provide the reason why the ticket requires
+                  action or information from the student.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  if (!updating) {
+                    setShowPendingModal(false);
+                    setPendingReason("");
+                    setPendingError("");
+                    setSelectedStatus(ticket.status);
+                  }
+                }}
+                disabled={updating}
+                className="rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {/* BODY */}
+            <div className="space-y-4 p-5">
+              {pendingError && (
+                <div className="flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                  <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+
+                  <span>{pendingError}</span>
+                </div>
+              )}
+
+              <div>
+                <label className="mb-1.5 block text-sm font-medium text-slate-700">
+                  Pending Reason
+                  <span className="ml-1 text-red-500">
+                    *
+                  </span>
+                </label>
+
+                <textarea
+                  value={pendingReason}
+                  onChange={(event) => {
+                    setPendingReason(
+                      event.target.value
+                    );
+
+                    if (pendingError) {
+                      setPendingError("");
+                    }
+                  }}
+                  placeholder="Enter the reason..."
+                  rows={4}
+                  maxLength={1000}
+                  disabled={updating}
+                  className="w-full resize-none rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 disabled:bg-slate-50"
+                />
+
+                <div className="mt-1 flex justify-end">
+                  <span className="text-[11px] text-slate-400">
+                    {pendingReason.length}/1000
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* FOOTER */}
+            <div className="flex gap-2 border-t border-slate-200 bg-slate-50 p-4">
+              <button
+                type="button"
+                onClick={() => {
+                  if (!updating) {
+                    setShowPendingModal(false);
+                    setPendingReason("");
+                    setPendingError("");
+                    setSelectedStatus(ticket.status);
+                  }
+                }}
+                disabled={updating}
+                className="flex-1 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Cancel
+              </button>
+
+              <button
+                type="button"
+                onClick={handlePendingStatus}
+                disabled={
+                  updating ||
+                  !pendingReason.trim()
+                }
+                className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {updating
+                  ? "Updating..."
+                  : "Move to Pending Student"}
+              </button>
+            </div>
           </div>
-        </Modal>
+        </div>
       )}
 
       {/* =====================================================

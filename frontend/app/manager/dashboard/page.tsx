@@ -9,6 +9,7 @@ import {
   CheckCircle2,
   ChevronRight,
   Clock3,
+  Filter,
   LayoutDashboard,
   LogOut,
   Menu,
@@ -320,16 +321,16 @@ export default function ManagerDashboardPage() {
               {/* PROFILE */}
               <button
                 type="button"
-                onClick={() =>
-                  navigate("/manager/profile")
-                }
-                className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-600 transition hover:bg-slate-50 hover:text-slate-900"
-              >
-                <UserCog className="h-[18px] w-[18px]" />
-
-                <span>Profile</span>
-              </button>
-
+                onClick={() => router.push("/manager/categories")}
+                className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition ${
+                    window.location.pathname.startsWith("/manager/categories")
+                    ? "bg-blue-50 text-blue-600"
+                    : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                }`}
+                >
+                <Filter className="h-5 w-5" />
+                <span>Categories</span>
+                </button>
             </nav>
           </div>
 
@@ -477,14 +478,16 @@ export default function ManagerDashboardPage() {
 
               <button
                 type="button"
-                onClick={() =>
-                  navigate("/manager/profile")
-                }
-                className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50"
-              >
-                <UserCog className="h-[18px] w-[18px]" />
-                Profile
-              </button>
+                onClick={() => router.push("/manager/categories")}
+                className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition ${
+                    window.location.pathname.startsWith("/manager/categories")
+                    ? "bg-blue-50 text-blue-600"
+                    : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                }`}
+                >
+                <Filter className="h-5 w-5" />
+                <span>Categories</span>
+                </button>
 
             </nav>
 

@@ -8,11 +8,9 @@ import {
   Edit,
   GraduationCap,
   LayoutDashboard,
-  LogOut,
   Menu,
   Plus,
   Search,
-  Settings,
   Ticket,
   UserCheck,
   UserCog,
@@ -21,12 +19,15 @@ import {
 } from "lucide-react";
 
 import { useAuth } from "@/context/AuthContext";
-import AddStaffModal from "./components/addstaffmodal";
 import {
   getAllStaff,
   updateStaffStatus,
   type Staff,
 } from "@/lib/staff";
+import AddStaffModal from "./components/addstaffmodal";
+import EditStaffModal from "./components/editstaffmodal";
+
+
 
 type StatusFilter = "ALL" | "ACTIVE" | "INACTIVE";
 
@@ -44,6 +45,9 @@ export default function StaffManagementPage() {
   const [mobileMenu, setMobileMenu] = useState(false);
 
   const [showAddModal, setShowAddModal] = useState(false);
+
+  const [editingStaff, setEditingStaff] =
+    useState<Staff | null>(null);
 
   const [statusUpdatingId, setStatusUpdatingId] =
     useState<number | null>(null);
@@ -170,6 +174,20 @@ export default function StaffManagementPage() {
   };
 
   // --------------------------------------------------
+  // FORMAT DATE
+  // --------------------------------------------------
+
+  const formatDate = (date?: string) => {
+    if (!date) return "-";
+
+    return new Date(date).toLocaleDateString("en-IN", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
+  };
+
+  // --------------------------------------------------
   // LOADING / AUTH
   // --------------------------------------------------
 
@@ -257,25 +275,6 @@ export default function StaffManagementPage() {
               <UserCog className="h-5 w-5" />
               Staff Management
             </button>
-
-            <button
-              onClick={() => {
-                setMobileMenu(false);
-                router.push("/manager/settings");
-              }}
-              className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-slate-600 hover:bg-slate-50"
-            >
-              <Settings className="h-5 w-5" />
-              Settings
-            </button>
-
-            <button
-              onClick={logout}
-              className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-sm text-red-600 hover:bg-red-50"
-            >
-              <LogOut className="h-5 w-5" />
-              Sign out
-            </button>
           </nav>
         </div>
       )}
@@ -340,6 +339,8 @@ export default function StaffManagementPage() {
               <UserCog className="h-5 w-5" />
               Staff Management
             </button>
+
+            
           </nav>
 
           {/* USER / LOGOUT */}
@@ -360,14 +361,6 @@ export default function StaffManagementPage() {
                 </p>
               </div>
             </div>
-
-            <button
-              onClick={logout}
-              className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-slate-500 hover:bg-red-50 hover:text-red-600"
-            >
-              <LogOut className="h-4 w-4" />
-              Sign out
-            </button>
           </div>
         </aside>
 
@@ -403,7 +396,10 @@ export default function StaffManagementPage() {
               </div>
 
               <button
-                onClick={() => setShowAddModal(true)}
+                onClick={() => {
+                  setError("");
+                  setShowAddModal(true);
+                }}
                 className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 text-sm font-semibold text-white shadow-lg shadow-blue-600/20 hover:bg-blue-700"
               >
                 <Plus className="h-4 w-4" />
@@ -609,7 +605,10 @@ export default function StaffManagementPage() {
                   {!search &&
                     statusFilter === "ALL" && (
                       <button
-                        onClick={() => setShowAddModal(true)}
+                        onClick={() => {
+                          setError("");
+                          setShowAddModal(true);
+                        }}
                         className="mt-5 inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700"
                       >
                         <Plus className="h-4 w-4" />
@@ -712,11 +711,10 @@ export default function StaffManagementPage() {
                             <td className="px-5 py-4">
                               <div className="flex items-center justify-end gap-2">
                                 <button
-                                  onClick={() =>
-                                    router.push(
-                                      `/manager/staff/${member.id}/edit`
-                                    )
-                                  }
+                                  onClick={() => {
+                                    setError("");
+                                    setEditingStaff(member);
+                                  }}
                                   className="inline-flex h-9 items-center gap-2 rounded-lg border border-slate-200 px-3 text-xs font-medium text-slate-600 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600"
                                   title="Edit staff"
                                 >
@@ -814,11 +812,10 @@ export default function StaffManagementPage() {
 
                             <div className="mt-4 flex gap-2">
                               <button
-                                onClick={() =>
-                                  router.push(
-                                    `/manager/staff/${member.id}/edit`
-                                  )
-                                }
+                                onClick={() => {
+                                  setError("");
+                                  setEditingStaff(member);
+                                }}
                                 className="inline-flex h-9 flex-1 items-center justify-center gap-2 rounded-lg border border-slate-200 text-xs font-medium text-slate-600 hover:bg-slate-50"
                               >
                                 <Edit className="h-4 w-4" />
@@ -867,12 +864,30 @@ export default function StaffManagementPage() {
         </main>
       </div>
 
+      {/* ==================================================
+          ADD STAFF MODAL
+      ================================================== */}
+
       <AddStaffModal
         open={showAddModal}
         onClose={() => setShowAddModal(false)}
         onSuccess={async () => {
-          await fetchStaff();
           setShowAddModal(false);
+          await fetchStaff();
+        }}
+      />
+
+      {/* ==================================================
+          EDIT STAFF MODAL
+      ================================================== */}
+
+      <EditStaffModal
+        open={!!editingStaff}
+        staff={editingStaff}
+        onClose={() => setEditingStaff(null)}
+        onSuccess={async () => {
+          setEditingStaff(null);
+          await fetchStaff();
         }}
       />
     </div>

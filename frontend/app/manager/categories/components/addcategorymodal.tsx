@@ -243,11 +243,10 @@ export default function CategoryModal({
                 }}
                 placeholder="e.g. Technical Support"
                 disabled={saving}
-                className={`h-11 w-full rounded-xl border bg-white px-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:ring-4 focus:ring-blue-500/10 disabled:bg-slate-50 ${
-                  errors.name
+                className={`h-11 w-full rounded-xl border bg-white px-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:ring-4 focus:ring-blue-500/10 disabled:bg-slate-50 ${errors.name
                     ? "border-red-300 focus:border-red-500"
                     : "border-slate-200 focus:border-blue-500"
-                }`}
+                  }`}
               />
 
               {errors.name && (
@@ -276,31 +275,31 @@ export default function CategoryModal({
             </div>
 
             {/* PRIORITY */}
-<div>
-  <label className="mb-1.5 block text-sm font-medium text-slate-700">
-    Default Priority
-  </label>
+            <div>
+              <label className="mb-1.5 block text-sm font-medium text-slate-700">
+                Default Priority
+              </label>
 
-  <select
-    value={defaultPriority}
-    onChange={(event) =>
-      setDefaultPriority(
-        event.target.value as CategoryPriority
-      )
-    }
-    disabled={saving}
-    className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 disabled:bg-slate-50"
-  >
-    {priorityOptions.map((priority) => (
-      <option
-        key={priority}
-        value={priority}
-      >
-        {formatPriority(priority)}
-      </option>
-    ))}
-  </select>
-</div>
+              <select
+                value={defaultPriority}
+                onChange={(event) =>
+                  setDefaultPriority(
+                    event.target.value as CategoryPriority
+                  )
+                }
+                disabled={saving}
+                className="h-11 w-full rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 disabled:bg-slate-50"
+              >
+                {priorityOptions.map((priority) => (
+                  <option
+                    key={priority}
+                    value={priority}
+                  >
+                    {formatPriority(priority)}
+                  </option>
+                ))}
+              </select>
+            </div>
 
             {/* SLA */}
             <div>
@@ -331,11 +330,10 @@ export default function CategoryModal({
                   }}
                   placeholder="24"
                   disabled={saving}
-                  className={`h-11 w-full rounded-xl border bg-white pl-10 pr-3 text-sm text-slate-700 outline-none transition focus:ring-4 focus:ring-blue-500/10 disabled:bg-slate-50 ${
-                    errors.slaHours
+                  className={`h-11 w-full rounded-xl border bg-white pl-10 pr-3 text-sm text-slate-700 outline-none transition focus:ring-4 focus:ring-blue-500/10 disabled:bg-slate-50 ${errors.slaHours
                       ? "border-red-300 focus:border-red-500"
                       : "border-slate-200 focus:border-blue-500"
-                  }`}
+                    }`}
                 />
               </div>
 
